@@ -9,9 +9,14 @@ using Unity.Burst;
 
 public class testing : MonoBehaviour
 {
+    //checkbox to easily be able to test how jobs affect the processing
     [SerializeField] private bool useJobs = true;
+    //prefab object, what will be spawned
     [SerializeField] private Transform pfObjects;
+    //list of objects that will be spawned
     private List<Objects> objectList;
+    //number of objects spawned
+    [SerializeField] private int spawns = 1000;
 
     public class Objects
     {
@@ -21,8 +26,9 @@ public class testing : MonoBehaviour
 
     private void Start()
     {
+        //initializing the objects that will be spawned
         objectList = new List<Objects>();
-        for (int i = 0; i < 1000; i++)
+        for (int i = 0; i < spawns; i++)
         {
             Transform objectTransform = Instantiate(pfObjects, new Vector3(UnityEngine.Random.Range(-8f, 8f), UnityEngine.Random.Range(-5f, 5f)), Quaternion.identity);
             objectList.Add(new Objects
@@ -39,6 +45,10 @@ public class testing : MonoBehaviour
 
         if (useJobs)
         {
+            //required parameters for parllel jobs to work, requirements vary
+            //positionArray required if a normal parallel job, no transformAccessArray
+            //transformAccessArray required with parallel transform jobs but no positionArray
+
             //NativeArray<float3> positionArray = new NativeArray<float3>(objectList.Count, Allocator.TempJob);
             NativeArray<float> moveYArray = new NativeArray<float>(objectList.Count, Allocator.TempJob);
             TransformAccessArray transformAccessArray = new TransformAccessArray(objectList.Count);
@@ -50,6 +60,7 @@ public class testing : MonoBehaviour
                 transformAccessArray.Add(objectList[i].transform);
             }
 
+            //used when working with large lists
             /*
             ExampleToughParallelJob exampleToughParallelJob = new ExampleToughParallelJob
             {
@@ -62,21 +73,28 @@ public class testing : MonoBehaviour
             jobHandle.Complete();
             */
 
+            //setting up a job and sending necessary parameters
+            //used when working with a large number of graphical elements
             ExampleToughParallelJobTransform exampleToughParallelJobTransform = new ExampleToughParallelJobTransform
             {
+                //job parameters
                 deltaTime = Time.deltaTime,
                 moveYArray = moveYArray,
             };
 
+            //executing the job
             JobHandle jobHandle = exampleToughParallelJobTransform.Schedule(transformAccessArray);
+            //ending the job
             jobHandle.Complete();
 
+            //changing worked on object
             for (int i = 0; i < objectList.Count; i++)
             {
                 //objectList[i].transform.position = positionArray[i];
                 objectList[i].moveY = moveYArray[i];
             }
 
+            //removing completed items
             //positionArray.Dispose();
             moveYArray.Dispose();
             transformAccessArray.Dispose();
@@ -98,6 +116,8 @@ public class testing : MonoBehaviour
             }
 
         }
+
+        //used when working with heavy calculations
         /*if (useJobs)
         {
             NativeList<JobHandle> jobHandleList = new NativeList<JobHandle>(Allocator.Temp);
@@ -137,11 +157,14 @@ public class testing : MonoBehaviour
     }
 }
 
+//called to preform the job function
+//burst compilation (availabe under job meny) for faster process
 [BurstCompile]
 public struct ExampleThoughJob : IJob
 {
     //Extra fields added here
 
+    //Execute can be called the jobs "update", but in reality it is only preformed to completition once
     public void Execute()
     {
         //representes a though task like certain pathfinding or some complex calculation
@@ -153,12 +176,17 @@ public struct ExampleThoughJob : IJob
     }
 }
 
+//called to preform the parallel jobs
 public struct ExampleToughParallelJob : IJobParallelFor
 {
+    //float 3 is one of the job systems own elements that is used in place of vector3 in some instances
     public NativeArray<float3> positionArray;
     public NativeArray<float> moveYArray;
     public float deltaTime;
 
+    //Extra fields added here
+
+    //Execute can be called the jobs "update", but in reality it is only preformed to completition once
     public void Execute(int index)
     {
         positionArray[index] += new float3(0, moveYArray[index] * deltaTime, 0f);
@@ -178,11 +206,15 @@ public struct ExampleToughParallelJob : IJobParallelFor
     }
 }
 
+//called to preform the parallel transform jobs
 public struct ExampleToughParallelJobTransform : IJobParallelForTransform
 {
     public NativeArray<float> moveYArray;
     public float deltaTime;
 
+    //Extra fields added here
+
+    //Execute can be called the jobs "update", but in reality it is only preformed to completition once
     public void Execute(int index, TransformAccess transform)
     {
         transform.position += new Vector3(0, moveYArray[index] * deltaTime, 0f);
