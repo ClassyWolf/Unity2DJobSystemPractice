@@ -131,7 +131,7 @@ GameObject:
   - component: {fileID: 175403240}
   - component: {fileID: 175403239}
   m_Layer: 0
-  m_Name: GameObject
+  m_Name: JobManager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -152,6 +152,7 @@ MonoBehaviour:
   useJobs: 1
   pfObjects: {fileID: 4452215878327413428, guid: 954a88114376def46b1fab35239e1f05,
     type: 3}
+  spawns: 1000
 --- !u!4 &175403240
 Transform:
   m_ObjectHideFlags: 0

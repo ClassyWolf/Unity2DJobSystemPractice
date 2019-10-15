@@ -69,6 +69,7 @@ public class testing : MonoBehaviour
                 moveYArray = moveYArray,
             };
 
+            //adds the jobs to a shcedule and sets it to x (in this case 100) to execute per core
             JobHandle jobHandle = exampleToughParallelJob.Schedule(objectList.Count, 100);
             jobHandle.Complete();
             */
@@ -207,6 +208,7 @@ public struct ExampleToughParallelJob : IJobParallelFor
 }
 
 //called to preform the parallel transform jobs
+[BurstCompile]
 public struct ExampleToughParallelJobTransform : IJobParallelForTransform
 {
     public NativeArray<float> moveYArray;
